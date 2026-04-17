@@ -3,7 +3,13 @@ import { signInAction } from "../../actions";
 import { DemoFlow } from "../../../components/app/demo-flow";
 import { SubmitButton } from "../../../components/ui/submit-button";
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
+  const params = await searchParams;
+
   return (
     <main className="min-h-screen bg-paper p-6 text-ink md:p-10">
       <section className="grid min-h-[calc(100vh-3rem)] gap-6 lg:grid-cols-[1.02fr_0.98fr]">
@@ -45,6 +51,12 @@ export default function SignInPage() {
         </div>
 
         <section className="flex flex-col justify-center">
+          {params?.error === "database" ? (
+            <div className="motion-card mb-4 rounded-ui border border-coral/20 bg-coral/10 px-4 py-3 text-sm font-black text-coral">
+              Sign in could not reach the production database. Check `DATABASE_URL`, then run `npm run db:push:prod` and `npm run db:seed:prod`.
+            </div>
+          ) : null}
+
           <form action={signInAction} className="surface motion-card w-full p-6 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>

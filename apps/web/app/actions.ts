@@ -28,11 +28,16 @@ type SiteInput = {
 };
 
 export async function signInAction(formData: FormData) {
-  await createSession({
-    name: cleanText(formData.get("name"), "Ahmed"),
-    email: cleanEmail(formData.get("email")),
-    agencyName: cleanText(formData.get("agencyName"), "GrowthOps Studio")
-  });
+  try {
+    await createSession({
+      name: cleanText(formData.get("name"), "Ahmed"),
+      email: cleanEmail(formData.get("email")),
+      agencyName: cleanText(formData.get("agencyName"), "GrowthOps Studio")
+    });
+  } catch (error) {
+    console.error("Sign-in failed. Check DATABASE_URL and production database tables.", error);
+    redirect("/sign-in?error=database");
+  }
 
   revalidateAppViews();
   redirect("/connected-sites?flow=started");
