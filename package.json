@@ -29,6 +29,9 @@
     "typescript": "latest"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3"
+    "@prisma/client": "^6.19.3",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
   }
 }
