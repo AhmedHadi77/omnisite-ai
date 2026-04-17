@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  role       String      @default("OWNER")
+  workspaces Workspace[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Workspace {
+  id             String          @id @default(cuid())
+  ownerId        String
+  agencyName     String
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  connectedSites ConnectedSite[]
+  clientRequests ClientRequest[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model ConnectedSite {
+  id                 String              @id @default(cuid())
+  workspaceId        String
+  platform           String
+  siteName           String
+  domain             String
+  apiStatus          String              @default("MOCKED")
+  status             String              @default("Connected")
+  healthScore        Int                 @default(75)
+  seoScore           Int                 @default(75)
+  uxScore            Int                 @default(75)
+  speedScore         Int                 @default(75)
+  traffic            String              @default("0")
+  leads              Int                 @default(0)
+  orders             Int                 @default(0)
+  lastSyncLabel      String              @default("Just now")
+  ownerName          String              @default("Ops")
+  imageUrl           String              @default("https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80")
+  workspace          Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  credential         SiteCredential?
+  audits             Audit[]
+  tasks              Task[]
+  contentSuggestions ContentSuggestion[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model SiteCredential {
+  id             String        @id @default(cuid())
+  siteId         String        @unique
+  provider       String
+  authType       String
+  accountLabel   String        @default("")
+  apiBaseUrl     String        @default("")
+  externalSiteId String        @default("")
+  username       String        @default("")
+  shopDomain     String        @default("")
+  tokenPreview   String        @default("")
+  secretStored   Boolean       @default(false)
+  scopes         String        @default("")
+  lastTestStatus String        @default("NOT_TESTED")
+  lastTestMessage String       @default("Connection has not been tested yet.")
+  lastTestedAt   DateTime?
+  site           ConnectedSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Audit {
+  id         String        @id @default(cuid())
+  siteId     String
+  seoScore   Int
+  uxScore    Int
+  speedScore Int
+  aiSummary  String
+  site       ConnectedSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+}
+
+model Task {
+  id          String        @id @default(cuid())
+  siteId      String
+  title       String
+  description String
+  status      String        @default("TODO")
+  priority    String        @default("MEDIUM")
+  source      String        @default("AI")
+  dueLabel    String        @default("This week")
+  impact      String        @default("Site health")
+  site        ConnectedSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ContentSuggestion {
+  id            String        @id @default(cuid())
+  siteId        String
+  pageName      String
+  originalText  String
+  suggestedText String
+  platform      String
+  site          ConnectedSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+}
+
+model ClientRequest {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  requestTitle String
+  requestBody  String
+  status       String    @default("TODO")
+  ageLabel     String    @default("Just now")
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
