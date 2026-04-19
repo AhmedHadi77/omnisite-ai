@@ -1,4 +1,4 @@
-import { DatabaseZap, KeyRound, PlugZap, Settings, ShieldCheck, UserRound } from "lucide-react";
+import { AlertTriangle, CheckCircle2, DatabaseZap, KeyRound, PlugZap, Settings, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { AppPageHero, AppStatCard, MetricStrip } from "../../../components/app/page-chrome";
 import { getDashboardData } from "../../../lib/dashboard-data";
@@ -8,6 +8,7 @@ export default async function SettingsPage() {
   const [session, dashboard] = await Promise.all([getCurrentSession(), getDashboardData()]);
   const savedCredentials = dashboard.sites.filter((site) => site.credentialStatus === "Credential saved").length;
   const connectedSites = dashboard.sites.filter((site) => site.status === "Connected").length;
+  const readiness = getProductionReadiness(savedCredentials);
 
   return (
     <main className="page-enter">
@@ -48,7 +49,7 @@ export default async function SettingsPage() {
       <section className="motion-list mt-6 grid gap-4 md:grid-cols-3">
         <AppStatCard icon={<UserRound className="h-5 w-5" />} label="Owner" note={session.email} value={session.userName} />
         <AppStatCard accent="citron" icon={<ShieldCheck className="h-5 w-5" />} label="Connected sites" note="API status passed" value={`${connectedSites}/${dashboard.sites.length}`} />
-        <AppStatCard accent="coral" icon={<KeyRound className="h-5 w-5" />} label="Credentials" note="Stored as masked metadata" value={`${savedCredentials}/${dashboard.sites.length}`} />
+        <AppStatCard accent="coral" icon={<KeyRound className="h-5 w-5" />} label="Credentials" note="Encrypted secrets with masked previews" value={`${savedCredentials}/${dashboard.sites.length}`} />
       </section>
 
       <section className="mt-6 grid gap-5 xl:grid-cols-[1fr_420px]">
@@ -69,20 +70,73 @@ export default async function SettingsPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-black uppercase text-citron">Deployment checklist</p>
-              <h2 className="mt-2 text-3xl font-black">Production keys</h2>
+              <h2 className="mt-2 text-3xl font-black">{readiness.done}/{readiness.items.length} ready</h2>
+              <p className="mt-2 text-sm leading-6 text-cloud/65">
+                This reads your server environment and workspace records. Secrets stay hidden.
+              </p>
             </div>
             <Settings className="h-7 w-7 text-citron" />
           </div>
           <div className="mt-5 grid gap-3">
-            <ChecklistItem icon={<DatabaseZap className="h-4 w-4" />} label="Move DATABASE_URL to hosted PostgreSQL" />
-            <ChecklistItem icon={<KeyRound className="h-4 w-4" />} label="Add OPENAI_API_KEY for live audit text" />
-            <ChecklistItem icon={<PlugZap className="h-4 w-4" />} label="Add platform API tokens for real credential tests" />
-            <ChecklistItem icon={<ShieldCheck className="h-4 w-4" />} label="Replace local auth with Clerk or Supabase Auth" />
+            {readiness.items.map((item) => (
+              <ChecklistItem
+                detail={item.detail}
+                done={item.done}
+                icon={item.icon}
+                key={item.label}
+                label={item.label}
+              />
+            ))}
           </div>
         </section>
       </section>
     </main>
   );
+}
+
+function getProductionReadiness(savedCredentials: number) {
+  const databaseUrl = process.env.DATABASE_URL ?? "";
+  const hasPostgresDatabase = databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("postgres://");
+  const hasOpenAi = Boolean(process.env.OPENAI_API_KEY);
+  const hasEncryptionKey = Boolean(process.env.CREDENTIAL_ENCRYPTION_KEY);
+  const hasRealAuth = Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const hasEncryptedCredentials = hasEncryptionKey && savedCredentials > 0;
+
+  const items = [
+    {
+      done: hasPostgresDatabase,
+      icon: <DatabaseZap className="h-4 w-4" />,
+      label: hasPostgresDatabase ? "Hosted PostgreSQL connected" : "Move DATABASE_URL to hosted PostgreSQL",
+      detail: hasPostgresDatabase ? "DATABASE_URL is using PostgreSQL." : "This environment is still using local SQLite."
+    },
+    {
+      done: hasOpenAi,
+      icon: <KeyRound className="h-4 w-4" />,
+      label: hasOpenAi ? "OpenAI API key detected" : "Add OPENAI_API_KEY for live audit text",
+      detail: hasOpenAi ? `AI audits can use ${process.env.OPENAI_MODEL ?? "the default model"}.` : "AI audit will use fallback content until this is set."
+    },
+    {
+      done: hasEncryptedCredentials,
+      icon: <PlugZap className="h-4 w-4" />,
+      label: hasEncryptedCredentials ? "Encrypted platform credentials saved" : "Add encrypted Webflow, WordPress, or Shopify credentials",
+      detail: hasEncryptedCredentials
+        ? `${savedCredentials} site${savedCredentials === 1 ? "" : "s"} have encrypted secrets saved.`
+        : hasEncryptionKey
+          ? "Encryption is ready. Add a new site with a real platform token."
+          : "Add CREDENTIAL_ENCRYPTION_KEY before saving real platform tokens."
+    },
+    {
+      done: hasRealAuth,
+      icon: <ShieldCheck className="h-4 w-4" />,
+      label: hasRealAuth ? "External auth keys detected" : "Demo auth active",
+      detail: hasRealAuth ? "Clerk environment keys are present." : "Current sign-in is a portfolio/demo session. Add Clerk or Supabase for public user accounts."
+    }
+  ];
+
+  return {
+    done: items.filter((item) => item.done).length,
+    items
+  };
 }
 
 function SettingRow({ label, value }: { label: string; value: string }) {
@@ -94,11 +148,19 @@ function SettingRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ChecklistItem({ icon, label }: { icon: ReactNode; label: string }) {
+function ChecklistItem({ detail, done, icon, label }: { detail: string; done: boolean; icon: ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-ui border border-cloud/10 bg-cloud/6 p-3 text-sm font-bold text-cloud/78">
-      <span className="grid h-8 w-8 place-items-center rounded-ui bg-citron text-ink">{icon}</span>
-      {label}
+    <div className="flex items-start gap-3 rounded-ui border border-cloud/10 bg-cloud/6 p-3 text-sm text-cloud/78">
+      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-ui ${done ? "bg-citron text-ink" : "bg-coral text-ink"}`}>
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-2 font-black text-cloud">
+          {done ? <CheckCircle2 className="h-4 w-4 text-citron" /> : <AlertTriangle className="h-4 w-4 text-coral" />}
+          {label}
+        </span>
+        <span className="mt-1 block leading-5 text-cloud/58">{detail}</span>
+      </span>
     </div>
   );
 }
