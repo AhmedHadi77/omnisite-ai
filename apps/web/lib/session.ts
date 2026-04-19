@@ -16,7 +16,7 @@ export const demoWorkspaceId = "growthops-workspace";
 export type { AppSession, AuthResult };
 
 export async function getCurrentSession(): Promise<AppSession> {
-  const session = await auth();
+  const session = await getAuthSession();
   const appSession = await getAppSessionForUser({
     userId: session?.user?.id,
     email: session?.user?.email
@@ -50,4 +50,13 @@ export async function clearCurrentSession() {
 export function getAuthHome() {
   const baseUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
   return baseUrl ? `${baseUrl.replace(/\/$/, "")}${appHome}` : appHome;
+}
+
+async function getAuthSession() {
+  try {
+    return await auth();
+  } catch (error) {
+    console.error("Auth session could not be read.", error);
+    return null;
+  }
 }
