@@ -1,6 +1,4 @@
-import { ArrowRight, Building2, KeyRound, Mail, ShieldCheck, UserRound } from "lucide-react";
-import type { ReactNode } from "react";
-import { googleSignInAction, signUpAction } from "../../auth-actions";
+import { SignUpForm } from "../../../components/auth/auth-forms";
 
 const errorMessages: Record<string, string> = {
   account_exists: "That email already has an account. Use sign in instead.",
@@ -54,50 +52,9 @@ export default async function SignUpPage({
         </div>
 
         <section className="flex flex-col justify-center">
-          <div className="surface motion-card w-full p-6 md:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-black uppercase text-moss">Create account</p>
-                <h2 className="mt-2 text-4xl font-black">Start using OmniSite</h2>
-              </div>
-              <span className="grid h-11 w-11 place-items-center rounded-ui bg-citron text-ink">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-            </div>
+          <SignUpForm initialError={error} />
 
-            {error ? (
-              <div className="mt-5 rounded-ui border border-coral/25 bg-coral/10 p-4 text-sm font-bold text-coral">
-                {error}
-              </div>
-            ) : null}
-
-            <form action={googleSignInAction} className="mt-6">
-              <button className="btn-secondary w-full justify-center border-ink/10 bg-paper text-ink hover:bg-citron/30" type="submit">
-                <GoogleMark />
-                Continue with Google
-              </button>
-            </form>
-
-            <div className="my-5 flex items-center gap-3 text-xs font-black uppercase text-steel/70">
-              <span className="h-px flex-1 bg-ink/10" />
-              or create with email
-              <span className="h-px flex-1 bg-ink/10" />
-            </div>
-
-            <form action={signUpAction} className="grid gap-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <AuthField autoComplete="name" icon={<UserRound className="h-4 w-4 text-teal" />} label="Full name" name="name" placeholder="Ahmed Hadi" type="text" />
-                <AuthField autoComplete="username" icon={<UserRound className="h-4 w-4 text-teal" />} label="Username" name="username" placeholder="ahmedhadi" type="text" />
-              </div>
-              <AuthField autoComplete="organization" icon={<Building2 className="h-4 w-4 text-teal" />} label="Agency name" name="agencyName" placeholder="GrowthOps Studio" type="text" />
-              <AuthField autoComplete="email" icon={<Mail className="h-4 w-4 text-teal" />} label="Email address" name="email" placeholder="you@agency.com" type="email" />
-              <AuthField autoComplete="new-password" icon={<KeyRound className="h-4 w-4 text-teal" />} label="Password" minLength={8} name="password" placeholder="At least 8 characters" type="password" />
-              <button className="btn-primary mt-2 w-full" type="submit">
-                Create account and open workspace
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </form>
-
+          <div className="surface motion-card mt-4 p-4">
             <p className="mt-5 text-center text-sm font-bold text-steel">
               Already created your account?{" "}
               <a className="text-moss underline decoration-citron decoration-2 underline-offset-4" href="/sign-in">
@@ -111,55 +68,11 @@ export default async function SignUpPage({
   );
 }
 
-function AuthField({
-  autoComplete,
-  icon,
-  label,
-  minLength,
-  name,
-  placeholder,
-  type
-}: {
-  autoComplete: string;
-  icon: ReactNode;
-  label: string;
-  minLength?: number;
-  name: string;
-  placeholder: string;
-  type: string;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-black text-moss">
-      {label}
-      <span className="flex items-center gap-3 rounded-ui border border-ink/10 bg-paper px-4 py-3">
-        {icon}
-        <input
-          autoComplete={autoComplete}
-          className="w-full bg-transparent text-base font-bold text-ink outline-none placeholder:text-steel/55"
-          minLength={minLength}
-          name={name}
-          placeholder={placeholder}
-          required
-          type={type}
-        />
-      </span>
-    </label>
-  );
-}
-
 function MiniProof({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-ui bg-cloud/10 p-3">
       <p className="text-[0.65rem] font-black uppercase text-cloud/58">{label}</p>
       <p className="mt-1 text-xl font-black">{value}</p>
     </div>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <span className="grid h-5 w-5 place-items-center rounded-full bg-cloud text-sm font-black text-ink">
-      G
-    </span>
   );
 }

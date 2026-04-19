@@ -1,6 +1,6 @@
-import { ArrowRight, KeyRound, Mail, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
+import { ArrowRight, Sparkles, UserPlus } from "lucide-react";
 import { DemoFlow } from "../../../components/app/demo-flow";
-import { googleSignInAction, signInAction } from "../../auth-actions";
+import { SignInForm } from "../../../components/auth/auth-forms";
 
 const errorMessages: Record<string, string> = {
   account_exists: "That email already has an account. Sign in here instead.",
@@ -77,71 +77,7 @@ export default async function SignInPage({
             </div>
           </div>
 
-          <div className="surface motion-card w-full p-6 md:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-black uppercase text-moss">Secure sign in</p>
-                <h2 className="mt-2 text-4xl font-black">Open your workspace</h2>
-              </div>
-              <span className="grid h-11 w-11 place-items-center rounded-ui bg-citron text-ink">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-            </div>
-
-            {error ? (
-              <div className="mt-5 rounded-ui border border-coral/25 bg-coral/10 p-4 text-sm font-bold text-coral">
-                {error}
-              </div>
-            ) : null}
-
-            <form action={googleSignInAction} className="mt-6">
-              <button className="btn-secondary w-full justify-center border-ink/10 bg-paper text-ink hover:bg-citron/30" type="submit">
-                <GoogleMark />
-                Continue with Google
-              </button>
-            </form>
-
-            <div className="my-5 flex items-center gap-3 text-xs font-black uppercase text-steel/70">
-              <span className="h-px flex-1 bg-ink/10" />
-              or sign in with email
-              <span className="h-px flex-1 bg-ink/10" />
-            </div>
-
-            <form action={signInAction} className="grid gap-4">
-              <label className="grid gap-2 text-sm font-black text-moss">
-                Email address
-                <span className="flex items-center gap-3 rounded-ui border border-ink/10 bg-paper px-4 py-3">
-                  <Mail className="h-4 w-4 text-teal" />
-                  <input
-                    autoComplete="email"
-                    className="w-full bg-transparent text-base font-bold text-ink outline-none placeholder:text-steel/55"
-                    name="email"
-                    placeholder="you@agency.com"
-                    required
-                    type="email"
-                  />
-                </span>
-              </label>
-              <label className="grid gap-2 text-sm font-black text-moss">
-                Password
-                <span className="flex items-center gap-3 rounded-ui border border-ink/10 bg-paper px-4 py-3">
-                  <KeyRound className="h-4 w-4 text-teal" />
-                  <input
-                    autoComplete="current-password"
-                    className="w-full bg-transparent text-base font-bold text-ink outline-none placeholder:text-steel/55"
-                    name="password"
-                    placeholder="Your password"
-                    required
-                    type="password"
-                  />
-                </span>
-              </label>
-              <button className="btn-primary mt-2 w-full" type="submit">
-                Sign in and open workspace
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </form>
-          </div>
+          <SignInForm initialError={error} />
 
           <DemoFlow
             active="sign-in"
@@ -161,13 +97,5 @@ function MiniProof({ label, value }: { label: string; value: string }) {
       <p className="text-[0.65rem] font-black uppercase text-cloud/58">{label}</p>
       <p className="mt-1 text-xl font-black">{value}</p>
     </div>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <span className="grid h-5 w-5 place-items-center rounded-full bg-cloud text-sm font-black text-ink">
-      G
-    </span>
   );
 }
