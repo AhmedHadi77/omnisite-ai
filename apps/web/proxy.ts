@@ -18,7 +18,11 @@ const clerkIsConfigured = Boolean(
 
 export default clerkIsConfigured
   ? clerkMiddleware(async (auth, req) => {
-      if (req.nextUrl.pathname.startsWith("/dashboard")) {
+      const isClerkHandshake =
+        req.nextUrl.searchParams.has("__clerk_handshake") ||
+        req.nextUrl.searchParams.has("_clerk_handshake");
+
+      if (req.nextUrl.pathname.startsWith("/dashboard") && !isClerkHandshake) {
         const workspaceUrl = new URL("/connected-sites", req.url);
         workspaceUrl.searchParams.set("flow", "started");
         return NextResponse.redirect(workspaceUrl);
