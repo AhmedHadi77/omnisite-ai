@@ -13,6 +13,8 @@ const fontVariables = {
   "--font-display": '"Fraunces", "Georgia", serif'
 } as CSSProperties;
 
+const appHome = "/connected-sites?flow=started";
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   const document = (
     <html data-scroll-behavior="smooth" lang="en" style={fontVariables}>
@@ -24,5 +26,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     return document;
   }
 
-  return <ClerkProvider>{document}</ClerkProvider>;
+  return (
+    <ClerkProvider
+      afterSignOutUrl="/"
+      signInFallbackRedirectUrl={appHome}
+      signInForceRedirectUrl={appHome}
+      signInUrl="/sign-in"
+      signUpFallbackRedirectUrl={appHome}
+      signUpForceRedirectUrl={appHome}
+      signUpUrl="/sign-up"
+    >
+      {document}
+    </ClerkProvider>
+  );
 }

@@ -27,6 +27,9 @@ export default clerkIsConfigured
       if (isProtectedRoute(req)) {
         await auth.protect();
       }
+    }, {
+      signInUrl: "/sign-in",
+      signUpUrl: "/sign-up"
     })
   : function proxy() {
       return NextResponse.next();
