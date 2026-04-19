@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
     "dev:api": "npm --workspace apps/api run dev",
-    "build": "node scripts/prisma-generate-for-env.js && npm --workspace apps/web run build",
+    "build": "npm --workspace apps/web run build",
     "build:prod": "npm run db:generate:prod && npm --workspace apps/web run build",
     "deploy:vercel": "vercel --prod",
     "typecheck": "npm --workspaces run typecheck",

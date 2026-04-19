@@ -1,6 +1,6 @@
 import { ArrowRight, Building2, KeyRound, Mail, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import { googleSignInAction, signUpAction } from "../../actions";
+import { googleSignInAction, signUpAction } from "../../auth-actions";
 
 const errorMessages: Record<string, string> = {
   account_exists: "That email already has an account. Use sign in instead.",

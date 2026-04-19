@@ -2,19 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isGoogleAuthConfigured, signIn as authSignIn } from "../auth";
 import { decryptSecret, encryptSecret } from "../lib/crypto";
 import { normalizePlatform } from "../lib/dashboard-data";
 import type { Platform } from "../lib/demo-data";
 import { generateSiteAudit } from "../lib/openai-audit";
 import { prisma } from "../lib/prisma";
-import {
-  clearCurrentSession,
-  createAccountSession,
-  getAuthHome,
-  getCurrentSession,
-  signInWithPassword
-} from "../lib/session";
+import { getCurrentSession } from "../lib/session";
 
 type SiteInput = {
   platform: Platform;
@@ -37,62 +30,6 @@ type SiteInput = {
     scopes: string;
   };
 };
-
-export async function signUpAction(formData: FormData) {
-  const email = cleanEmail(formData.get("email"));
-  const password = cleanSecret(formData.get("password"));
-  const result = await createAccountSession({
-    name: cleanText(formData.get("name"), ""),
-    username: cleanText(formData.get("username"), ""),
-    email,
-    password,
-    agencyName: cleanText(formData.get("agencyName"), "")
-  });
-
-  if (!result.ok) {
-    redirect(`/sign-up?error=${result.reason}`);
-  }
-
-  await authSignIn("credentials", {
-    email,
-    password,
-    redirectTo: getAuthHome()
-  });
-}
-
-export async function signInAction(formData: FormData) {
-  const email = cleanEmail(formData.get("email"));
-  const password = cleanSecret(formData.get("password"));
-  const result = await signInWithPassword({
-    email,
-    password
-  });
-
-  if (!result.ok) {
-    redirect(`/sign-in?error=${result.reason}`);
-  }
-
-  await authSignIn("credentials", {
-    email,
-    password,
-    redirectTo: getAuthHome()
-  });
-}
-
-export async function googleSignInAction() {
-  if (!isGoogleAuthConfigured()) {
-    redirect("/sign-in?error=google_not_configured");
-  }
-
-  await authSignIn("google", {
-    redirectTo: getAuthHome()
-  });
-}
-
-export async function signOutAction() {
-  await clearCurrentSession();
-  redirect("/sign-in");
-}
 
 export async function addSiteAction(formData: FormData) {
   const session = await getCurrentSession();
@@ -501,10 +438,6 @@ function cleanText(value: FormDataEntryValue | null, fallback: string) {
 
 function cleanSecret(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().slice(0, 2000);
-}
-
-function cleanEmail(value: FormDataEntryValue | null) {
-  return String(value ?? "").trim().toLowerCase().slice(0, 180);
 }
 
 function cleanDomain(value: FormDataEntryValue | null | false) {

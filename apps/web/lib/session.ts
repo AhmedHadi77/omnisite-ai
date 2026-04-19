@@ -49,7 +49,7 @@ export async function clearCurrentSession() {
 
 export function getAuthHome() {
   const baseUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
-  return baseUrl ? `${baseUrl.replace(/\/$/, "")}${appHome}` : appHome;
+  return baseUrl ? `${normalizeBaseUrl(baseUrl)}${appHome}` : appHome;
 }
 
 async function getAuthSession() {
@@ -59,4 +59,9 @@ async function getAuthSession() {
     console.error("Auth session could not be read.", error);
     return null;
   }
+}
+
+function normalizeBaseUrl(url: string) {
+  const value = url.trim().replace(/\/$/, "");
+  return value.startsWith("http://") || value.startsWith("https://") ? value : `https://${value}`;
 }

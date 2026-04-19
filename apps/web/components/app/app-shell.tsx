@@ -9,7 +9,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { signOutAction } from "../../app/actions";
+import { signOutAction } from "../../app/auth-actions";
 import { getCurrentSession } from "../../lib/session";
 
 const navItems = [

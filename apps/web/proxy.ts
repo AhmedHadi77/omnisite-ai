@@ -20,7 +20,8 @@ function getCanonicalHost() {
   if (!appUrl) return "";
 
   try {
-    return new URL(appUrl).host;
+    const normalized = appUrl.startsWith("http://") || appUrl.startsWith("https://") ? appUrl : `https://${appUrl}`;
+    return new URL(normalized).host;
   } catch {
     return "";
   }

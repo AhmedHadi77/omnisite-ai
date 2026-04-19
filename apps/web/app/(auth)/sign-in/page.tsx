@@ -1,6 +1,6 @@
 import { ArrowRight, KeyRound, Mail, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
 import { DemoFlow } from "../../../components/app/demo-flow";
-import { googleSignInAction, signInAction } from "../../actions";
+import { googleSignInAction, signInAction } from "../../auth-actions";
 
 const errorMessages: Record<string, string> = {
   account_exists: "That email already has an account. Sign in here instead.",

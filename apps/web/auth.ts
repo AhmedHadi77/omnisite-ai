@@ -17,7 +17,11 @@ export function isGoogleAuthConfigured() {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY,
+  secret:
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.CREDENTIAL_ENCRYPTION_KEY ||
+    "replace-this-temporary-omnisite-auth-secret",
   trustHost: true,
   pages: {
     signIn: "/sign-in",
@@ -106,5 +110,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 });
 
 function getAppBaseUrl(fallback: string) {
-  return (process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || fallback).replace(/\/$/, "");
+  return normalizeBaseUrl(process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || fallback);
+}
+
+function normalizeBaseUrl(url: string) {
+  const value = url.trim().replace(/\/$/, "");
+  if (!value) return "http://localhost:3000";
+  return value.startsWith("http://") || value.startsWith("https://") ? value : `https://${value}`;
 }
