@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import type { CSSProperties, ReactNode } from "react";
 import "./globals.css";
 
@@ -13,9 +14,15 @@ const fontVariables = {
 } as CSSProperties;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
+  const document = (
     <html data-scroll-behavior="smooth" lang="en" style={fontVariables}>
       <body>{children}</body>
     </html>
   );
+
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return document;
+  }
+
+  return <ClerkProvider>{document}</ClerkProvider>;
 }

@@ -1,11 +1,9 @@
-import { cookies } from "next/headers";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 
 export const demoUserId = "demo-owner";
 export const demoWorkspaceId = "growthops-workspace";
-
-const userCookie = "omnisite_user_id";
-const workspaceCookie = "omnisite_workspace_id";
 
 export type AppSession = {
   userId: string;
@@ -16,12 +14,16 @@ export type AppSession = {
 };
 
 export async function getCurrentSession(): Promise<AppSession> {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get(userCookie)?.value ?? demoUserId;
-  const workspaceId = cookieStore.get(workspaceCookie)?.value ?? demoWorkspaceId;
+  if (clerkIsConfigured()) {
+    return getClerkSession();
+  }
 
+  return getDemoSession();
+}
+
+async function getDemoSession() {
   const workspace = await prisma.workspace.findFirst({
-    where: { id: workspaceId, ownerId: userId },
+    where: { id: demoWorkspaceId, ownerId: demoUserId },
     include: { owner: true }
   });
 
@@ -44,28 +46,40 @@ export async function getCurrentSession(): Promise<AppSession> {
   });
 }
 
-export async function createSession(input: { name: string; email: string; agencyName: string }) {
-  const session = await ensureWorkspaceSession(input);
-  const cookieStore = await cookies();
+async function getClerkSession() {
+  const { isAuthenticated, redirectToSignIn } = await auth();
 
-  cookieStore.set(userCookie, session.userId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/"
-  });
-  cookieStore.set(workspaceCookie, session.workspaceId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/"
-  });
+  if (!isAuthenticated) {
+    return redirectToSignIn();
+  }
 
-  return session;
+  const user = await currentUser();
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const email =
+    user.primaryEmailAddress?.emailAddress ??
+    user.emailAddresses[0]?.emailAddress ??
+    `${user.id}@clerk.local`;
+  const name =
+    user.fullName ??
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ??
+    user.username ??
+    email.split("@")[0] ??
+    "Workspace Owner";
+  const agencyName = `${name}'s Workspace`;
+
+  return ensureWorkspaceSession({
+    name,
+    email,
+    agencyName,
+    preferredUserId: user.id
+  });
 }
 
-export async function clearSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete(userCookie);
-  cookieStore.delete(workspaceCookie);
+function clerkIsConfigured() {
+  return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
 }
 
 async function ensureWorkspaceSession(input: {
@@ -101,18 +115,11 @@ async function ensureWorkspaceSession(input: {
       }
     }));
 
-  if (workspace.agencyName !== input.agencyName && input.agencyName.trim().length > 0) {
-    await prisma.workspace.update({
-      where: { id: workspace.id },
-      data: { agencyName: input.agencyName }
-    });
-  }
-
   return {
     userId: user.id,
     workspaceId: workspace.id,
     userName: user.name,
     email: user.email,
-    agencyName: input.agencyName || workspace.agencyName
+    agencyName: workspace.agencyName
   };
 }

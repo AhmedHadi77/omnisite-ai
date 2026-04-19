@@ -7,7 +7,7 @@ import { normalizePlatform } from "../lib/dashboard-data";
 import type { Platform } from "../lib/demo-data";
 import { generateSiteAudit } from "../lib/openai-audit";
 import { prisma } from "../lib/prisma";
-import { clearSession, createSession, getCurrentSession } from "../lib/session";
+import { getCurrentSession } from "../lib/session";
 
 type SiteInput = {
   platform: Platform;
@@ -30,28 +30,6 @@ type SiteInput = {
     scopes: string;
   };
 };
-
-export async function signInAction(formData: FormData) {
-  try {
-    await createSession({
-      name: cleanText(formData.get("name"), "Ahmed"),
-      email: cleanEmail(formData.get("email")),
-      agencyName: cleanText(formData.get("agencyName"), "GrowthOps Studio")
-    });
-  } catch (error) {
-    console.error("Sign-in failed. Check DATABASE_URL and production database tables.", error);
-    redirect("/sign-in?error=database");
-  }
-
-  revalidateAppViews();
-  redirect("/connected-sites?flow=started");
-}
-
-export async function signOutAction() {
-  await clearSession();
-  revalidateAppViews();
-  redirect("/sign-in");
-}
 
 export async function addSiteAction(formData: FormData) {
   const session = await getCurrentSession();
@@ -460,11 +438,6 @@ function cleanText(value: FormDataEntryValue | null, fallback: string) {
 
 function cleanSecret(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().slice(0, 2000);
-}
-
-function cleanEmail(value: FormDataEntryValue | null) {
-  const text = String(value ?? "").trim().toLowerCase();
-  return text.includes("@") ? text.slice(0, 140) : "ahmed@example.com";
 }
 
 function cleanDomain(value: FormDataEntryValue | null | false) {
