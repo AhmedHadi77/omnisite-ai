@@ -1,6 +1,9 @@
 import { SignUp } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { RedirectIfSignedIn } from "../../../../components/auth/redirect-if-signed-in";
+
+const appHome = "/dashboard";
 
 export default async function SignUpPage() {
   const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
@@ -9,12 +12,13 @@ export default async function SignUpPage() {
     const { isAuthenticated } = await auth();
 
     if (isAuthenticated) {
-      redirect("/connected-sites?flow=started");
+      redirect(appHome);
     }
   }
 
   return (
     <main className="grid min-h-screen place-items-center bg-paper p-6 text-ink">
+      {clerkIsConfigured ? <RedirectIfSignedIn to={appHome} /> : null}
       <section className="surface motion-card w-full max-w-xl p-6 md:p-7">
         <div className="mb-6">
           <a className="text-sm font-black uppercase text-moss" href="/">
@@ -37,10 +41,12 @@ export default async function SignUpPage() {
                 footerActionLink: "text-moss"
               }
             }}
-            fallbackRedirectUrl="/connected-sites?flow=started"
-            forceRedirectUrl="/connected-sites?flow=started"
+            fallbackRedirectUrl={appHome}
+            forceRedirectUrl={appHome}
             path="/sign-up"
             routing="path"
+            signInFallbackRedirectUrl={appHome}
+            signInForceRedirectUrl={appHome}
             signInUrl="/sign-in"
           />
         ) : (

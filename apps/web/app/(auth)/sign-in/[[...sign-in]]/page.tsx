@@ -2,21 +2,31 @@ import { SignIn } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { ArrowRight, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
 import { redirect } from "next/navigation";
+import { RedirectIfSignedIn } from "../../../../components/auth/redirect-if-signed-in";
 import { DemoFlow } from "../../../../components/app/demo-flow";
 
-export default async function SignInPage() {
+const appHome = "/dashboard";
+
+export default async function SignInPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ redirect_url?: string }>;
+}) {
+  const params = await searchParams;
+  const isReturningFromAuth = Boolean(params?.redirect_url);
   const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
 
   if (clerkIsConfigured) {
     const { isAuthenticated } = await auth();
 
     if (isAuthenticated) {
-      redirect("/connected-sites?flow=started");
+      redirect(appHome);
     }
   }
 
   return (
     <main className="min-h-screen bg-paper p-6 text-ink md:p-10">
+      {clerkIsConfigured ? <RedirectIfSignedIn to={appHome} /> : null}
       <section className="grid min-h-[calc(100vh-3rem)] gap-6 lg:grid-cols-[1.02fr_0.98fr]">
         <div className="scan-panel relative overflow-hidden rounded-ui bg-graphite p-6 text-cloud shadow-2xl shadow-graphite/15 md:p-8">
           <img
@@ -31,10 +41,12 @@ export default async function SignInPage() {
                 OmniSite AI
               </a>
               <h1 className="motion-title-delay mt-5 max-w-4xl font-[var(--font-display)] text-5xl leading-none md:text-7xl">
-                Sign in only after your account exists.
+                {isReturningFromAuth ? "Finishing your secure sign in." : "Sign in only after your account exists."}
               </h1>
               <p className="motion-card mt-5 max-w-2xl text-lg leading-8 text-cloud/74">
-                First-time users should create an account. After that, come back here to sign in with Google or email.
+                {isReturningFromAuth
+                  ? "Once Clerk confirms your session, OmniSite opens your dashboard automatically."
+                  : "First-time users should create an account. After that, come back here to sign in with Google or email."}
               </p>
             </div>
 
@@ -64,14 +76,18 @@ export default async function SignInPage() {
                     <UserPlus className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="font-black">First time here?</p>
+                    <p className="font-black">{isReturningFromAuth ? "Verification complete?" : "First time here?"}</p>
                     <p className="mt-1 leading-6 text-steel">
-                      You do not have an OmniSite account yet. Create your account first, then use this sign-in page next time.
+                      {isReturningFromAuth
+                        ? "If this page does not move automatically, click Continue after sign in once and OmniSite will open your dashboard."
+                        : "You do not have an OmniSite account yet. Create your account first, then use this sign-in page next time."}
                     </p>
-                    <a className="btn-primary mt-3 inline-flex" href="/sign-up">
-                      Create account first
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
+                    {!isReturningFromAuth ? (
+                      <a className="btn-primary mt-3 inline-flex" href="/sign-up">
+                        Create account first
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -85,10 +101,12 @@ export default async function SignInPage() {
                       footerActionLink: "text-moss"
                     }
                   }}
-                  fallbackRedirectUrl="/connected-sites?flow=started"
-                  forceRedirectUrl="/connected-sites?flow=started"
+                  fallbackRedirectUrl={appHome}
+                  forceRedirectUrl={appHome}
                   path="/sign-in"
                   routing="path"
+                  signUpFallbackRedirectUrl={appHome}
+                  signUpForceRedirectUrl={appHome}
                   signUpUrl="/sign-up"
                   transferable={false}
                   withSignUp={false}
@@ -119,7 +137,7 @@ export default async function SignInPage() {
           <DemoFlow
             active="sign-in"
             description="This is the exact walkthrough to record for your portfolio demo."
-            nextHref="/connected-sites#add-site"
+            nextHref={appHome}
             nextLabel="Continue after sign in"
           />
         </section>
