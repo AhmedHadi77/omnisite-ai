@@ -24,7 +24,7 @@ export default async function SignUpPage() {
             Create your agency workspace.
           </h1>
           <p className="mt-3 text-sm leading-6 text-steel">
-            Sign up with Clerk, then OmniSite will create your private Prisma workspace on first launch.
+            Use this page the first time only. After your account exists, use the sign-in page to return to your workspace.
           </p>
         </div>
         {clerkIsConfigured ? (

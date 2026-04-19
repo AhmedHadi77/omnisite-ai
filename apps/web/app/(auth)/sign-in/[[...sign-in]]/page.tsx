@@ -1,6 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
 import { redirect } from "next/navigation";
 import { DemoFlow } from "../../../../components/app/demo-flow";
 
@@ -31,10 +31,10 @@ export default async function SignInPage() {
                 OmniSite AI
               </a>
               <h1 className="motion-title-delay mt-5 max-w-4xl font-[var(--font-display)] text-5xl leading-none md:text-7xl">
-                Real account access for every agency workspace.
+                Sign in only after your account exists.
               </h1>
               <p className="motion-card mt-5 max-w-2xl text-lg leading-8 text-cloud/74">
-                Sign in with Clerk, then OmniSite creates a private Prisma workspace owned by that account.
+                First-time users should create an account. After that, come back here to sign in with Google or email.
               </p>
             </div>
 
@@ -57,24 +57,44 @@ export default async function SignInPage() {
 
         <section className="flex flex-col justify-center">
           {clerkIsConfigured ? (
-            <div className="surface motion-card flex w-full justify-center p-6 md:p-7">
-              <SignIn
-                appearance={{
-                  elements: {
-                    cardBox: "shadow-none",
-                    card: "border-0 shadow-none",
-                    formButtonPrimary: "bg-ink text-cloud hover:bg-moss",
-                    footerActionLink: "text-moss"
-                  }
-                }}
-                fallbackRedirectUrl="/connected-sites?flow=started"
-                forceRedirectUrl="/connected-sites?flow=started"
-                path="/sign-in"
-                routing="path"
-                signUpFallbackRedirectUrl="/connected-sites?flow=started"
-                signUpUrl="/sign-up"
-              />
-            </div>
+            <>
+              <div className="motion-card mb-4 rounded-ui border border-citron/40 bg-citron/15 p-4 text-sm text-moss">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-ui bg-citron text-ink">
+                    <UserPlus className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-black">First time here?</p>
+                    <p className="mt-1 leading-6 text-steel">
+                      You do not have an OmniSite account yet. Create your account first, then use this sign-in page next time.
+                    </p>
+                    <a className="btn-primary mt-3 inline-flex" href="/sign-up">
+                      Create account first
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div className="surface motion-card flex w-full justify-center p-6 md:p-7">
+                <SignIn
+                  appearance={{
+                    elements: {
+                      cardBox: "shadow-none",
+                      card: "border-0 shadow-none",
+                      formButtonPrimary: "bg-ink text-cloud hover:bg-moss",
+                      footerActionLink: "text-moss"
+                    }
+                  }}
+                  fallbackRedirectUrl="/connected-sites?flow=started"
+                  forceRedirectUrl="/connected-sites?flow=started"
+                  path="/sign-in"
+                  routing="path"
+                  signUpUrl="/sign-up"
+                  transferable={false}
+                  withSignUp={false}
+                />
+              </div>
+            </>
           ) : (
             <div className="surface motion-card w-full p-6 md:p-7">
               <div className="flex items-start justify-between gap-4">
