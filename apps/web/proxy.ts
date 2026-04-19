@@ -18,6 +18,12 @@ const clerkIsConfigured = Boolean(
 
 export default clerkIsConfigured
   ? clerkMiddleware(async (auth, req) => {
+      if (req.nextUrl.pathname.startsWith("/dashboard")) {
+        const workspaceUrl = new URL("/connected-sites", req.url);
+        workspaceUrl.searchParams.set("flow", "started");
+        return NextResponse.redirect(workspaceUrl);
+      }
+
       if (isProtectedRoute(req)) {
         await auth.protect();
       }
