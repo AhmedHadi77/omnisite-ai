@@ -7,7 +7,13 @@ import { normalizePlatform } from "../lib/dashboard-data";
 import type { Platform } from "../lib/demo-data";
 import { generateSiteAudit } from "../lib/openai-audit";
 import { prisma } from "../lib/prisma";
-import { getCurrentSession } from "../lib/session";
+import {
+  clearCurrentSession,
+  createAccountSession,
+  getAuthHome,
+  getCurrentSession,
+  signInWithPassword
+} from "../lib/session";
 
 type SiteInput = {
   platform: Platform;
@@ -30,6 +36,40 @@ type SiteInput = {
     scopes: string;
   };
 };
+
+export async function signUpAction(formData: FormData) {
+  const result = await createAccountSession({
+    name: cleanText(formData.get("name"), ""),
+    username: cleanText(formData.get("username"), ""),
+    email: cleanEmail(formData.get("email")),
+    password: cleanSecret(formData.get("password")),
+    agencyName: cleanText(formData.get("agencyName"), "")
+  });
+
+  if (!result.ok) {
+    redirect(`/sign-up?error=${result.reason}`);
+  }
+
+  redirect(getAuthHome());
+}
+
+export async function signInAction(formData: FormData) {
+  const result = await signInWithPassword({
+    email: cleanEmail(formData.get("email")),
+    password: cleanSecret(formData.get("password"))
+  });
+
+  if (!result.ok) {
+    redirect(`/sign-in?error=${result.reason}`);
+  }
+
+  redirect(getAuthHome());
+}
+
+export async function signOutAction() {
+  await clearCurrentSession();
+  redirect("/sign-in");
+}
 
 export async function addSiteAction(formData: FormData) {
   const session = await getCurrentSession();
@@ -438,6 +478,10 @@ function cleanText(value: FormDataEntryValue | null, fallback: string) {
 
 function cleanSecret(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().slice(0, 2000);
+}
+
+function cleanEmail(value: FormDataEntryValue | null) {
+  return String(value ?? "").trim().toLowerCase().slice(0, 180);
 }
 
 function cleanDomain(value: FormDataEntryValue | null | false) {

@@ -9,7 +9,9 @@ async function main() {
     CREATE TABLE IF NOT EXISTS "User" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "name" TEXT NOT NULL,
+      "username" TEXT NOT NULL DEFAULT '',
       "email" TEXT NOT NULL,
+      "passwordHash" TEXT NOT NULL DEFAULT '',
       "role" TEXT NOT NULL DEFAULT 'OWNER',
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL
@@ -19,6 +21,9 @@ async function main() {
   await prisma.$executeRawUnsafe(`
     CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
   `);
+
+  await addColumnIfMissing("User", "username", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("User", "passwordHash", "TEXT NOT NULL DEFAULT ''");
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Workspace" (

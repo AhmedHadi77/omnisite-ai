@@ -10,7 +10,9 @@ datasource db {
 model User {
   id         String      @id @default(cuid())
   name       String
+  username   String      @default("")
   email      String      @unique
+  passwordHash String    @default("")
   role       String      @default("OWNER")
   workspaces Workspace[]
   createdAt  DateTime    @default(now())

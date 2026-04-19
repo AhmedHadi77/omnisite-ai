@@ -1,4 +1,3 @@
-import { SignOutButton, UserButton } from "@clerk/nextjs";
 import {
   ClipboardList,
   Globe2,
@@ -10,6 +9,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { signOutAction } from "../../app/actions";
 import { getCurrentSession } from "../../lib/session";
 
 const navItems = [
@@ -23,7 +23,13 @@ const navItems = [
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const session = await getCurrentSession();
-  const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
+  const initials = session.userName
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="min-h-screen bg-paper text-ink">
@@ -35,7 +41,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
               <p className="text-xs font-black uppercase text-citron">OmniSite AI</p>
               <h1 className="mt-2 font-[var(--font-display)] text-3xl leading-none">Agency OS</h1>
             </div>
-            <span className="status-pill bg-citron text-ink lg:mt-5">{clerkIsConfigured ? "Clerk auth" : "Local MVP"}</span>
+            <span className="status-pill bg-citron text-ink lg:mt-5">Secure auth</span>
           </div>
 
           <nav className="relative z-10 mt-6 grid grid-cols-2 gap-2 lg:grid-cols-1">
@@ -63,21 +69,16 @@ export async function AppShell({ children }: { children: ReactNode }) {
                 <p className="mt-1 font-bold">{session.agencyName}</p>
                 <p className="text-sm text-cloud/65">{session.userName}</p>
               </div>
-              {clerkIsConfigured ? <UserButton /> : null}
+              <div className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cloud/12 text-sm font-black text-citron">
+                {initials || "OS"}
+              </div>
             </div>
-            {clerkIsConfigured ? (
-              <SignOutButton redirectUrl="/">
-                <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-ui border border-cloud/20 px-3 py-2 text-sm font-bold text-cloud/80 hover:-translate-y-0.5 hover:bg-cloud/10" type="button">
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </SignOutButton>
-            ) : (
+            <form action={signOutAction}>
               <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-ui border border-cloud/20 px-3 py-2 text-sm font-bold text-cloud/80 hover:-translate-y-0.5 hover:bg-cloud/10" type="submit">
                 <LogOut className="h-4 w-4" />
-                Demo session
+                Sign out
               </button>
-            )}
+            </form>
           </div>
         </aside>
 

@@ -1,6 +1,11 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
+
+const sessionCookieName = "omnisite_session";
+const sessionMaxAgeSeconds = 60 * 60 * 24 * 30;
+const appHome = "/connected-sites?flow=started";
 
 export const demoUserId = "demo-owner";
 export const demoWorkspaceId = "growthops-workspace";
@@ -13,105 +18,41 @@ export type AppSession = {
   agencyName: string;
 };
 
-export async function getCurrentSession(): Promise<AppSession> {
-  if (clerkIsConfigured()) {
-    return getClerkSession();
-  }
-
-  return getDemoSession();
-}
-
-async function getDemoSession() {
-  const workspace = await prisma.workspace.findFirst({
-    where: { id: demoWorkspaceId, ownerId: demoUserId },
-    include: { owner: true }
-  });
-
-  if (workspace) {
-    return {
-      userId: workspace.ownerId,
-      workspaceId: workspace.id,
-      userName: workspace.owner.name,
-      email: workspace.owner.email,
-      agencyName: workspace.agencyName
+export type AuthResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: "account_exists" | "invalid_credentials" | "invalid_email" | "weak_password";
     };
+
+export async function getCurrentSession(): Promise<AppSession> {
+  const cookieStore = await cookies();
+  const verified = verifySessionCookie(cookieStore.get(sessionCookieName)?.value);
+
+  if (!verified) {
+    redirect("/sign-in");
   }
 
-  return ensureWorkspaceSession({
-    name: "Ahmed",
-    email: "ahmed@example.com",
-    agencyName: "GrowthOps Studio",
-    preferredUserId: demoUserId,
-    preferredWorkspaceId: demoWorkspaceId
+  const user = await prisma.user.findUnique({
+    where: { id: verified.userId },
+    include: {
+      workspaces: {
+        orderBy: { createdAt: "asc" },
+        take: 1
+      }
+    }
   });
-}
 
-async function getClerkSession() {
-  const { isAuthenticated, redirectToSignIn } = await auth();
-
-  if (!isAuthenticated) {
-    return redirectToSignIn();
-  }
-
-  const user = await currentUser();
   if (!user) {
     redirect("/sign-in");
   }
 
-  const email =
-    user.primaryEmailAddress?.emailAddress ??
-    user.emailAddresses[0]?.emailAddress ??
-    `${user.id}@clerk.local`;
-  const name =
-    user.fullName ??
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ??
-    user.username ??
-    email.split("@")[0] ??
-    "Workspace Owner";
-  const agencyName = `${name}'s Workspace`;
-
-  return ensureWorkspaceSession({
-    name,
-    email,
-    agencyName,
-    preferredUserId: user.id
-  });
-}
-
-function clerkIsConfigured() {
-  return Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
-}
-
-async function ensureWorkspaceSession(input: {
-  name: string;
-  email: string;
-  agencyName: string;
-  preferredUserId?: string;
-  preferredWorkspaceId?: string;
-}): Promise<AppSession> {
-  const user = await prisma.user.upsert({
-    where: { email: input.email },
-    update: {
-      name: input.name
-    },
-    create: {
-      id: input.preferredUserId,
-      name: input.name,
-      email: input.email,
-      role: "OWNER"
-    }
-  });
-
   const workspace =
-    (await prisma.workspace.findFirst({
-      where: { ownerId: user.id },
-      orderBy: { createdAt: "asc" }
-    })) ??
+    user.workspaces[0] ??
     (await prisma.workspace.create({
       data: {
-        id: input.preferredWorkspaceId,
         ownerId: user.id,
-        agencyName: input.agencyName
+        agencyName: `${user.name}'s Workspace`
       }
     }));
 
@@ -122,4 +63,148 @@ async function ensureWorkspaceSession(input: {
     email: user.email,
     agencyName: workspace.agencyName
   };
+}
+
+export async function createAccountSession(input: {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  agencyName: string;
+}): Promise<AuthResult> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, reason: "invalid_email" };
+  }
+
+  if (input.password.trim().length < 8) {
+    return { ok: false, reason: "weak_password" };
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return { ok: false, reason: "account_exists" };
+  }
+
+  const name = cleanName(input.name || input.username || email.split("@")[0]);
+  const workspaceName = cleanName(input.agencyName || `${name}'s Workspace`);
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      username: cleanUsername(input.username),
+      email,
+      role: "OWNER",
+      passwordHash: hashPassword(input.password),
+      workspaces: {
+        create: {
+          agencyName: workspaceName
+        }
+      }
+    }
+  });
+
+  await setSessionCookie(user.id);
+  return { ok: true };
+}
+
+export async function signInWithPassword(input: { email: string; password: string }): Promise<AuthResult> {
+  const email = normalizeEmail(input.email);
+  if (!isValidEmail(email)) {
+    return { ok: false, reason: "invalid_email" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user?.passwordHash || !verifyPassword(input.password, user.passwordHash)) {
+    return { ok: false, reason: "invalid_credentials" };
+  }
+
+  await setSessionCookie(user.id);
+  return { ok: true };
+}
+
+export async function clearCurrentSession() {
+  const cookieStore = await cookies();
+  cookieStore.delete(sessionCookieName);
+}
+
+export function getAuthHome() {
+  return appHome;
+}
+
+async function setSessionCookie(userId: string) {
+  const expiresAt = Date.now() + sessionMaxAgeSeconds * 1000;
+  const payload = `${userId}.${expiresAt}`;
+  const signature = signPayload(payload);
+  const cookieStore = await cookies();
+
+  cookieStore.set(sessionCookieName, `${payload}.${signature}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: sessionMaxAgeSeconds,
+    path: "/"
+  });
+}
+
+function verifySessionCookie(value?: string) {
+  if (!value) return null;
+
+  const [userId, expiresAtValue, signature] = value.split(".");
+  if (!userId || !expiresAtValue || !signature) return null;
+
+  const expiresAt = Number(expiresAtValue);
+  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
+
+  const payload = `${userId}.${expiresAtValue}`;
+  const expectedSignature = signPayload(payload);
+
+  if (!safeEqual(signature, expectedSignature)) return null;
+  return { userId };
+}
+
+function signPayload(payload: string) {
+  return createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
+}
+
+function getSessionSecret() {
+  return process.env.AUTH_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY || "omnisite-dev-auth-secret";
+}
+
+function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("base64url");
+  const hash = scryptSync(password, salt, 64).toString("base64url");
+  return `scrypt$${salt}$${hash}`;
+}
+
+function verifyPassword(password: string, storedHash: string) {
+  const [scheme, salt, hash] = storedHash.split("$");
+  if (scheme !== "scrypt" || !salt || !hash) return false;
+
+  const expected = Buffer.from(hash, "base64url");
+  const actual = scryptSync(password, salt, expected.length);
+  return timingSafeEqual(actual, expected);
+}
+
+function safeEqual(value: string, expected: string) {
+  const valueBuffer = Buffer.from(value);
+  const expectedBuffer = Buffer.from(expected);
+  if (valueBuffer.length !== expectedBuffer.length) return false;
+  return timingSafeEqual(valueBuffer, expectedBuffer);
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function cleanUsername(username: string) {
+  return username.trim().replace(/^@/, "").slice(0, 40);
+}
+
+function cleanName(name: string) {
+  return name.trim().slice(0, 90) || "Workspace Owner";
 }

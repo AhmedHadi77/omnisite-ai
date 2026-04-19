@@ -165,7 +165,9 @@ async function main() {
     data: {
       id: ownerId,
       name: "Ahmed",
+      username: "ahmed",
       email: "ahmed@example.com",
+      passwordHash: "",
       role: "OWNER",
       workspaces: {
         create: {

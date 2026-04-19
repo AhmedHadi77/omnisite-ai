@@ -67,8 +67,8 @@ const aiFlow = [
 ];
 
 const nextBuild = [
-  "Replace local session auth with Clerk or Supabase Auth.",
   "Move SQLite to hosted PostgreSQL on Supabase or Neon.",
+  "Add optional OAuth login with Auth.js after the first-party email/password flow.",
   "Store encrypted platform secrets instead of masked demo metadata.",
   "Add background jobs for scheduled audits and sync events.",
   "Add real approval actions for client requests and task status changes.",
@@ -250,7 +250,7 @@ export default function CaseStudyPage() {
             <h2 className="mt-3 font-[var(--font-display)] text-5xl leading-none">Full-stack delivery with product judgment.</h2>
             <div className="mt-6 grid gap-3 md:grid-cols-2">
               <Proof icon={<Zap className="h-5 w-5" />} label="Frontend" text="Responsive dashboard UI, clear hierarchy, motion, forms, empty states, and workflow guidance." />
-              <Proof icon={<Database className="h-5 w-5" />} label="Backend" text="Server actions, Prisma models, local sessions, workspace ownership, and generated records." />
+              <Proof icon={<Database className="h-5 w-5" />} label="Backend" text="Server actions, Prisma models, secure sessions, workspace ownership, and generated records." />
               <Proof icon={<Bot className="h-5 w-5" />} label="AI" text="OpenAI-ready audit generation that creates summaries and task records." />
               <Proof icon={<GitBranch className="h-5 w-5" />} label="Integration thinking" text="Webflow, WordPress, and Shopify credential flows with live-test hooks." />
             </div>

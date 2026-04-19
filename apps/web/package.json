@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.2.3",
     "@omnisite/types": "*",
     "@omnisite/ui": "*",
     "@omnisite/utils": "*",

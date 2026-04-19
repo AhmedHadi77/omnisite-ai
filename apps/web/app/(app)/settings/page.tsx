@@ -33,7 +33,7 @@ export default async function SettingsPage() {
         <p className="text-xs font-black uppercase text-citron">Current workspace</p>
         <h2 className="mt-2 text-3xl font-black">{session.agencyName}</h2>
         <p className="mt-3 text-sm leading-6 text-cloud/68">
-          Owned by {session.userName}. Local auth is active and scoped to this workspace.
+          Owned by {session.userName}. Built-in secure auth is active and scoped to this workspace.
         </p>
         <div className="mt-5">
           <MetricStrip
@@ -99,7 +99,7 @@ function getProductionReadiness(savedCredentials: number) {
   const hasPostgresDatabase = databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("postgres://");
   const hasOpenAi = Boolean(process.env.OPENAI_API_KEY);
   const hasEncryptionKey = Boolean(process.env.CREDENTIAL_ENCRYPTION_KEY);
-  const hasRealAuth = Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  const hasRealAuth = Boolean(process.env.AUTH_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY);
   const hasEncryptedCredentials = hasEncryptionKey && savedCredentials > 0;
 
   const items = [
@@ -128,8 +128,10 @@ function getProductionReadiness(savedCredentials: number) {
     {
       done: hasRealAuth,
       icon: <ShieldCheck className="h-4 w-4" />,
-      label: hasRealAuth ? "External auth keys detected" : "Demo auth active",
-      detail: hasRealAuth ? "Clerk environment keys are present." : "Current sign-in is a portfolio/demo session. Add Clerk or Supabase for public user accounts."
+      label: hasRealAuth ? "Secure auth secret detected" : "Add AUTH_SECRET for production auth",
+      detail: hasRealAuth
+        ? "First-party email/password sessions are signed with a server secret."
+        : "Add AUTH_SECRET in Vercel so production sessions are private and stable."
     }
   ];
 
