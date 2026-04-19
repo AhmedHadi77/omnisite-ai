@@ -1,11 +1,12 @@
 import { ArrowRight, KeyRound, Mail, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
 import { DemoFlow } from "../../../components/app/demo-flow";
-import { signInAction } from "../../actions";
+import { googleSignInAction, signInAction } from "../../actions";
 
 const errorMessages: Record<string, string> = {
   account_exists: "That email already has an account. Sign in here instead.",
   invalid_credentials: "Email or password is not correct.",
   invalid_email: "Enter a valid email address.",
+  google_not_configured: "Google login is not connected yet. Add Google OAuth keys in Vercel first.",
   weak_password: "Password must be at least 8 characters."
 };
 
@@ -49,7 +50,7 @@ export default async function SignInPage({
                 <Sparkles className="h-7 w-7 text-citron" />
               </div>
               <div className="mt-5 grid gap-2 sm:grid-cols-3">
-                <MiniProof label="Auth" value="Cookie" />
+                <MiniProof label="Auth" value="Google" />
                 <MiniProof label="Data" value="Owned" />
                 <MiniProof label="AI" value="Ready" />
               </div>
@@ -93,7 +94,20 @@ export default async function SignInPage({
               </div>
             ) : null}
 
-            <form action={signInAction} className="mt-6 grid gap-4">
+            <form action={googleSignInAction} className="mt-6">
+              <button className="btn-secondary w-full justify-center border-ink/10 bg-paper text-ink hover:bg-citron/30" type="submit">
+                <GoogleMark />
+                Continue with Google
+              </button>
+            </form>
+
+            <div className="my-5 flex items-center gap-3 text-xs font-black uppercase text-steel/70">
+              <span className="h-px flex-1 bg-ink/10" />
+              or sign in with email
+              <span className="h-px flex-1 bg-ink/10" />
+            </div>
+
+            <form action={signInAction} className="grid gap-4">
               <label className="grid gap-2 text-sm font-black text-moss">
                 Email address
                 <span className="flex items-center gap-3 rounded-ui border border-ink/10 bg-paper px-4 py-3">
@@ -147,5 +161,13 @@ function MiniProof({ label, value }: { label: string; value: string }) {
       <p className="text-[0.65rem] font-black uppercase text-cloud/58">{label}</p>
       <p className="mt-1 text-xl font-black">{value}</p>
     </div>
+  );
+}
+
+function GoogleMark() {
+  return (
+    <span className="grid h-5 w-5 place-items-center rounded-full bg-cloud text-sm font-black text-ink">
+      G
+    </span>
   );
 }

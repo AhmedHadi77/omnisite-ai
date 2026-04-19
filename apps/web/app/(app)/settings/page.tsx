@@ -99,7 +99,11 @@ function getProductionReadiness(savedCredentials: number) {
   const hasPostgresDatabase = databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("postgres://");
   const hasOpenAi = Boolean(process.env.OPENAI_API_KEY);
   const hasEncryptionKey = Boolean(process.env.CREDENTIAL_ENCRYPTION_KEY);
-  const hasRealAuth = Boolean(process.env.AUTH_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY);
+  const hasRealAuth = Boolean(process.env.AUTH_SECRET);
+  const hasGoogleAuth = Boolean(
+    (process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID) &&
+      (process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET)
+  );
   const hasEncryptedCredentials = hasEncryptionKey && savedCredentials > 0;
 
   const items = [
@@ -128,9 +132,11 @@ function getProductionReadiness(savedCredentials: number) {
     {
       done: hasRealAuth,
       icon: <ShieldCheck className="h-4 w-4" />,
-      label: hasRealAuth ? "Secure auth secret detected" : "Add AUTH_SECRET for production auth",
+      label: hasRealAuth ? "Auth.js sessions active" : "Add AUTH_SECRET for production auth",
       detail: hasRealAuth
-        ? "First-party email/password sessions are signed with a server secret."
+        ? hasGoogleAuth
+          ? "Email/password and Google OAuth sign-in are configured."
+          : "Email/password sign-in is active. Add Google OAuth keys to enable Continue with Google."
         : "Add AUTH_SECRET in Vercel so production sessions are private and stable."
     }
   ];

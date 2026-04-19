@@ -68,7 +68,7 @@ const aiFlow = [
 
 const nextBuild = [
   "Move SQLite to hosted PostgreSQL on Supabase or Neon.",
-  "Add optional OAuth login with Auth.js after the first-party email/password flow.",
+  "Add more OAuth providers after Google, such as GitHub or Microsoft.",
   "Store encrypted platform secrets instead of masked demo metadata.",
   "Add background jobs for scheduled audits and sync events.",
   "Add real approval actions for client requests and task status changes.",

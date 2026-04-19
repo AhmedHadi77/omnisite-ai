@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isGoogleAuthConfigured, signIn as authSignIn } from "../auth";
 import { decryptSecret, encryptSecret } from "../lib/crypto";
 import { normalizePlatform } from "../lib/dashboard-data";
 import type { Platform } from "../lib/demo-data";
@@ -38,11 +39,13 @@ type SiteInput = {
 };
 
 export async function signUpAction(formData: FormData) {
+  const email = cleanEmail(formData.get("email"));
+  const password = cleanSecret(formData.get("password"));
   const result = await createAccountSession({
     name: cleanText(formData.get("name"), ""),
     username: cleanText(formData.get("username"), ""),
-    email: cleanEmail(formData.get("email")),
-    password: cleanSecret(formData.get("password")),
+    email,
+    password,
     agencyName: cleanText(formData.get("agencyName"), "")
   });
 
@@ -50,20 +53,40 @@ export async function signUpAction(formData: FormData) {
     redirect(`/sign-up?error=${result.reason}`);
   }
 
-  redirect(getAuthHome());
+  await authSignIn("credentials", {
+    email,
+    password,
+    redirectTo: getAuthHome()
+  });
 }
 
 export async function signInAction(formData: FormData) {
+  const email = cleanEmail(formData.get("email"));
+  const password = cleanSecret(formData.get("password"));
   const result = await signInWithPassword({
-    email: cleanEmail(formData.get("email")),
-    password: cleanSecret(formData.get("password"))
+    email,
+    password
   });
 
   if (!result.ok) {
     redirect(`/sign-in?error=${result.reason}`);
   }
 
-  redirect(getAuthHome());
+  await authSignIn("credentials", {
+    email,
+    password,
+    redirectTo: getAuthHome()
+  });
+}
+
+export async function googleSignInAction() {
+  if (!isGoogleAuthConfigured()) {
+    redirect("/sign-in?error=google_not_configured");
+  }
+
+  await authSignIn("google", {
+    redirectTo: getAuthHome()
+  });
 }
 
 export async function signOutAction() {

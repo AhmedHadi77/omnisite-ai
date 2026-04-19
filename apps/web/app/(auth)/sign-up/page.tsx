@@ -1,11 +1,12 @@
 import { ArrowRight, Building2, KeyRound, Mail, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import { signUpAction } from "../../actions";
+import { googleSignInAction, signUpAction } from "../../actions";
 
 const errorMessages: Record<string, string> = {
   account_exists: "That email already has an account. Use sign in instead.",
   invalid_credentials: "Email or password is not correct.",
   invalid_email: "Enter a valid email address.",
+  google_not_configured: "Google sign-up is not connected yet. Add Google OAuth keys in Vercel first.",
   weak_password: "Password must be at least 8 characters."
 };
 
@@ -70,7 +71,20 @@ export default async function SignUpPage({
               </div>
             ) : null}
 
-            <form action={signUpAction} className="mt-6 grid gap-4">
+            <form action={googleSignInAction} className="mt-6">
+              <button className="btn-secondary w-full justify-center border-ink/10 bg-paper text-ink hover:bg-citron/30" type="submit">
+                <GoogleMark />
+                Continue with Google
+              </button>
+            </form>
+
+            <div className="my-5 flex items-center gap-3 text-xs font-black uppercase text-steel/70">
+              <span className="h-px flex-1 bg-ink/10" />
+              or create with email
+              <span className="h-px flex-1 bg-ink/10" />
+            </div>
+
+            <form action={signUpAction} className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <AuthField autoComplete="name" icon={<UserRound className="h-4 w-4 text-teal" />} label="Full name" name="name" placeholder="Ahmed Hadi" type="text" />
                 <AuthField autoComplete="username" icon={<UserRound className="h-4 w-4 text-teal" />} label="Username" name="username" placeholder="ahmedhadi" type="text" />
@@ -139,5 +153,13 @@ function MiniProof({ label, value }: { label: string; value: string }) {
       <p className="text-[0.65rem] font-black uppercase text-cloud/58">{label}</p>
       <p className="mt-1 text-xl font-black">{value}</p>
     </div>
+  );
+}
+
+function GoogleMark() {
+  return (
+    <span className="grid h-5 w-5 place-items-center rounded-full bg-cloud text-sm font-black text-ink">
+      G
+    </span>
   );
 }
