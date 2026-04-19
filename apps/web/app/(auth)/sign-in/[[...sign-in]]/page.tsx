@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { RedirectIfSignedIn } from "../../../../components/auth/redirect-if-signed-in";
 import { DemoFlow } from "../../../../components/app/demo-flow";
 
-const appHome = "/connected-sites#add-site";
+const appHome = "/connected-sites?flow=started";
 
 export default async function SignInPage({
   searchParams
@@ -45,7 +45,7 @@ export default async function SignInPage({
               </h1>
               <p className="motion-card mt-5 max-w-2xl text-lg leading-8 text-cloud/74">
                 {isReturningFromAuth
-                  ? "Once Clerk confirms your session, OmniSite opens your dashboard automatically."
+                  ? "Once Clerk confirms your session, OmniSite opens your workspace automatically."
                   : "First-time users should create an account. After that, come back here to sign in with Google or email."}
               </p>
             </div>
@@ -79,7 +79,7 @@ export default async function SignInPage({
                     <p className="font-black">{isReturningFromAuth ? "Verification complete?" : "First time here?"}</p>
                     <p className="mt-1 leading-6 text-steel">
                       {isReturningFromAuth
-                        ? "If this page does not move automatically, click Continue after sign in once and OmniSite will open your dashboard."
+                        ? "If this page does not move automatically, click Continue after sign in once and OmniSite will open your workspace."
                         : "You do not have an OmniSite account yet. Create your account first, then use this sign-in page next time."}
                     </p>
                     {!isReturningFromAuth ? (
