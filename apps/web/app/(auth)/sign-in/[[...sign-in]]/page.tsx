@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { RedirectIfSignedIn } from "../../../../components/auth/redirect-if-signed-in";
 import { DemoFlow } from "../../../../components/app/demo-flow";
 
-const appHome = "/dashboard";
+const appHome = "/connected-sites#add-site";
 
 export default async function SignInPage({
   searchParams

@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { RedirectIfSignedIn } from "../../../../components/auth/redirect-if-signed-in";
 
-const appHome = "/dashboard";
+const appHome = "/connected-sites#add-site";
 
 export default async function SignUpPage() {
   const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
