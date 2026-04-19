@@ -48,5 +48,6 @@ export async function clearCurrentSession() {
 }
 
 export function getAuthHome() {
-  return appHome;
+  const baseUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+  return baseUrl ? `${baseUrl.replace(/\/$/, "")}${appHome}` : appHome;
 }

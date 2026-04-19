@@ -105,17 +105,21 @@ export async function ensureOAuthUser(input: { email: string; name?: string | nu
 }
 
 export async function getAppSessionForUser(input: { userId?: string; email?: string | null }): Promise<AppSession | null> {
-  const user = input.userId
+  const userById = input.userId
     ? await prisma.user.findUnique({
         where: { id: input.userId },
         include: { workspaces: { orderBy: { createdAt: "asc" }, take: 1 } }
       })
-    : input.email
+    : null;
+
+  const user =
+    userById ??
+    (input.email
       ? await prisma.user.findUnique({
           where: { email: normalizeEmail(input.email) },
           include: { workspaces: { orderBy: { createdAt: "asc" }, take: 1 } }
         })
-      : null;
+      : null);
 
   if (!user) return null;
 

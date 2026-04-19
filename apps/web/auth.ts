@@ -76,15 +76,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user }) {
       const email = user?.email ?? token.email;
-      const userId = user?.id;
 
-      if (userId) {
-        token.userId = userId;
-      }
-
-      if (email && !token.userId) {
+      if (email) {
         const dbUser = await prisma.user.findUnique({ where: { email } });
         token.userId = dbUser?.id;
+      } else if (user?.id) {
+        token.userId = user.id;
       }
 
       return token;
@@ -97,9 +94,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      return `${baseUrl}/connected-sites?flow=started`;
+      const appBaseUrl = getAppBaseUrl(baseUrl);
+
+      if (url.startsWith("/")) return `${appBaseUrl}${url}`;
+      if (new URL(url).origin === appBaseUrl) return url;
+      if (new URL(url).origin === baseUrl) return url.replace(baseUrl, appBaseUrl);
+
+      return `${appBaseUrl}/connected-sites?flow=started`;
     }
   }
 });
+
+function getAppBaseUrl(fallback: string) {
+  return (process.env.AUTH_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || fallback).replace(/\/$/, "");
+}
