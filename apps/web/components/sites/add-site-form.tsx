@@ -15,7 +15,7 @@ export function AddSiteForm() {
       <p className="text-sm font-black uppercase text-citron">Add connected site</p>
       <h2 className="mt-2 font-[var(--font-display)] text-4xl leading-none">Connect platform access.</h2>
       <p className="mt-3 text-sm leading-6 text-cloud/70">
-        Add the same credentials an agency would collect. OmniSite stores connection metadata and a masked token preview for this local MVP.
+        Add the same credentials an agency would collect. OmniSite encrypts the real secret and only shows a masked preview in the UI.
       </p>
 
       <div className="mt-5 grid gap-3">

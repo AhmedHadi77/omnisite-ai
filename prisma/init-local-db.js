@@ -68,6 +68,9 @@ async function main() {
       "username" TEXT NOT NULL DEFAULT '',
       "shopDomain" TEXT NOT NULL DEFAULT '',
       "tokenPreview" TEXT NOT NULL DEFAULT '',
+      "encryptedSecret" TEXT NOT NULL DEFAULT '',
+      "encryptionIv" TEXT NOT NULL DEFAULT '',
+      "encryptionTag" TEXT NOT NULL DEFAULT '',
       "secretStored" BOOLEAN NOT NULL DEFAULT false,
       "scopes" TEXT NOT NULL DEFAULT '',
       "lastTestStatus" TEXT NOT NULL DEFAULT 'NOT_TESTED',
@@ -86,6 +89,9 @@ async function main() {
   await addColumnIfMissing("SiteCredential", "lastTestStatus", "TEXT NOT NULL DEFAULT 'NOT_TESTED'");
   await addColumnIfMissing("SiteCredential", "lastTestMessage", "TEXT NOT NULL DEFAULT 'Connection has not been tested yet.'");
   await addColumnIfMissing("SiteCredential", "lastTestedAt", "DATETIME");
+  await addColumnIfMissing("SiteCredential", "encryptedSecret", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("SiteCredential", "encryptionIv", "TEXT NOT NULL DEFAULT ''");
+  await addColumnIfMissing("SiteCredential", "encryptionTag", "TEXT NOT NULL DEFAULT ''");
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Audit" (

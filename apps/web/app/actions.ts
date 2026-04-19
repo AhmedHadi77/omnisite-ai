@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { decryptSecret, encryptSecret } from "../lib/crypto";
 import { normalizePlatform } from "../lib/dashboard-data";
 import type { Platform } from "../lib/demo-data";
 import { generateSiteAudit } from "../lib/openai-audit";
@@ -22,6 +23,9 @@ type SiteInput = {
     username: string;
     shopDomain: string;
     tokenPreview: string;
+    encryptedSecret: string;
+    encryptionIv: string;
+    encryptionTag: string;
     secretStored: boolean;
     scopes: string;
   };
@@ -208,8 +212,9 @@ function parseSiteForm(formData: FormData, fallbackOwner: string): SiteInput {
 function buildCredential(platform: Platform, siteName: string, domain: string, formData: FormData): SiteInput["credential"] {
   if (platform === "WordPress") {
     const username = cleanText(formData.get("wordpressUsername"), "");
-    const password = cleanText(formData.get("wordpressAppPassword"), "");
+    const password = cleanSecret(formData.get("wordpressAppPassword"));
     const baseUrl = cleanUrl(formData.get("wordpressUrl"), `https://${domain}/wp-json/wp/v2`);
+    const encrypted = encryptCredentialSecret(password);
 
     return {
       provider: platform,
@@ -220,14 +225,16 @@ function buildCredential(platform: Platform, siteName: string, domain: string, f
       username,
       shopDomain: "",
       tokenPreview: maskSecret(password),
+      ...encrypted,
       secretStored: password.length > 0 && username.length > 0,
       scopes: "posts:read,pages:read,media:read"
     };
   }
 
   if (platform === "Shopify") {
-    const token = cleanText(formData.get("shopifyAdminToken"), "");
+    const token = cleanSecret(formData.get("shopifyAdminToken"));
     const shopDomain = cleanDomain(formData.get("shopifyShopDomain") || domain);
+    const encrypted = encryptCredentialSecret(token);
 
     return {
       provider: platform,
@@ -238,13 +245,15 @@ function buildCredential(platform: Platform, siteName: string, domain: string, f
       username: "",
       shopDomain,
       tokenPreview: maskSecret(token),
+      ...encrypted,
       secretStored: token.length > 0 && shopDomain.length > 0,
       scopes: "read_products,read_orders,read_content"
     };
   }
 
-  const token = cleanText(formData.get("webflowToken"), "");
+  const token = cleanSecret(formData.get("webflowToken"));
   const siteId = cleanText(formData.get("webflowSiteId"), domain);
+  const encrypted = encryptCredentialSecret(token);
 
   return {
     provider: platform,
@@ -255,6 +264,7 @@ function buildCredential(platform: Platform, siteName: string, domain: string, f
     username: "",
     shopDomain: "",
     tokenPreview: maskSecret(token),
+    ...encrypted,
     secretStored: token.length > 0 && siteId.length > 0,
     scopes: "sites:read,cms:read,forms:read"
   };
@@ -332,14 +342,17 @@ async function testPlatformCredential(
     username: string;
     shopDomain: string;
     secretStored: boolean;
+    encryptedSecret: string;
+    encryptionIv: string;
+    encryptionTag: string;
   }
 ) {
   try {
     if (platform === "Webflow") {
-      const token = process.env.WEBFLOW_API_TOKEN;
+      const token = readCredentialSecret(credential) || process.env.WEBFLOW_API_TOKEN;
       if (!token) {
         return credential.secretStored
-          ? { ok: true, message: "Local Webflow credential metadata passed. Add WEBFLOW_API_TOKEN to run a live API test." }
+          ? { ok: false, message: "Encrypted Webflow token is missing. Re-add this site with the API token." }
           : { ok: false, message: "Add Webflow site ID and token metadata before testing this connection." };
       }
 
@@ -352,10 +365,10 @@ async function testPlatformCredential(
     }
 
     if (platform === "WordPress") {
-      const password = process.env.WORDPRESS_APP_PASSWORD;
+      const password = readCredentialSecret(credential) || process.env.WORDPRESS_APP_PASSWORD;
       if (!password) {
         return credential.secretStored
-          ? { ok: true, message: "Local WordPress credential metadata passed. Add WORDPRESS_APP_PASSWORD to run a live REST API test." }
+          ? { ok: false, message: "Encrypted WordPress application password is missing. Re-add this site with the app password." }
           : { ok: false, message: "Add WordPress username and application password metadata before testing this connection." };
       }
 
@@ -370,11 +383,11 @@ async function testPlatformCredential(
         : { ok: false, message: `WordPress REST API returned ${response.status}.` };
     }
 
-    const token = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
+    const token = readCredentialSecret(credential) || process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
     const shopDomain = credential.shopDomain || process.env.SHOPIFY_SHOP_DOMAIN;
     if (!token || !shopDomain) {
       return credential.secretStored
-        ? { ok: true, message: "Local Shopify credential metadata passed. Add SHOPIFY_SHOP_DOMAIN and SHOPIFY_ADMIN_ACCESS_TOKEN to run a live Admin API test." }
+        ? { ok: false, message: "Encrypted Shopify Admin API token is missing. Re-add this site with the admin token." }
         : { ok: false, message: "Add Shopify shop domain and Admin API token metadata before testing this connection." };
     }
 
@@ -388,6 +401,34 @@ async function testPlatformCredential(
     const message = error instanceof Error ? error.message : "Connection test failed.";
     return { ok: false, message };
   }
+}
+
+function encryptCredentialSecret(secret: string) {
+  if (!secret) {
+    return {
+      encryptedSecret: "",
+      encryptionIv: "",
+      encryptionTag: ""
+    };
+  }
+
+  return encryptSecret(secret);
+}
+
+function readCredentialSecret(credential: {
+  encryptedSecret: string;
+  encryptionIv: string;
+  encryptionTag: string;
+  secretStored: boolean;
+}) {
+  if (!credential.secretStored) return "";
+  if (!credential.encryptedSecret || !credential.encryptionIv || !credential.encryptionTag) return "";
+
+  return decryptSecret({
+    encryptedSecret: credential.encryptedSecret,
+    encryptionIv: credential.encryptionIv,
+    encryptionTag: credential.encryptionTag
+  });
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit) {
@@ -415,6 +456,10 @@ function revalidateAppViews() {
 function cleanText(value: FormDataEntryValue | null, fallback: string) {
   const text = String(value ?? "").trim();
   return text.length > 0 ? text.slice(0, 140) : fallback;
+}
+
+function cleanSecret(value: FormDataEntryValue | null) {
+  return String(value ?? "").trim().slice(0, 2000);
 }
 
 function cleanEmail(value: FormDataEntryValue | null) {
