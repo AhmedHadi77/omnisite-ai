@@ -17,6 +17,7 @@ export function isGoogleAuthConfigured() {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY,
   trustHost: true,
   pages: {
     signIn: "/sign-in",
