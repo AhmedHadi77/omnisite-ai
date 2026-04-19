@@ -1,6 +1,18 @@
 import { SignUp } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
+
+  if (clerkIsConfigured) {
+    const { isAuthenticated } = await auth();
+
+    if (isAuthenticated) {
+      redirect("/connected-sites?flow=started");
+    }
+  }
+
   return (
     <main className="grid min-h-screen place-items-center bg-paper p-6 text-ink">
       <section className="surface motion-card w-full max-w-xl p-6 md:p-7">
@@ -15,7 +27,7 @@ export default function SignUpPage() {
             Sign up with Clerk, then OmniSite will create your private Prisma workspace on first launch.
           </p>
         </div>
-        {process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
+        {clerkIsConfigured ? (
           <SignUp
             appearance={{
               elements: {
@@ -26,6 +38,7 @@ export default function SignUpPage() {
               }
             }}
             fallbackRedirectUrl="/connected-sites?flow=started"
+            forceRedirectUrl="/connected-sites?flow=started"
             path="/sign-up"
             routing="path"
             signInUrl="/sign-in"

@@ -1,9 +1,19 @@
 import { SignIn } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { redirect } from "next/navigation";
 import { DemoFlow } from "../../../../components/app/demo-flow";
 
-export default function SignInPage() {
-  const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+export default async function SignInPage() {
+  const clerkIsConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
+
+  if (clerkIsConfigured) {
+    const { isAuthenticated } = await auth();
+
+    if (isAuthenticated) {
+      redirect("/connected-sites?flow=started");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-paper p-6 text-ink md:p-10">
@@ -58,6 +68,7 @@ export default function SignInPage() {
                   }
                 }}
                 fallbackRedirectUrl="/connected-sites?flow=started"
+                forceRedirectUrl="/connected-sites?flow=started"
                 path="/sign-in"
                 routing="path"
                 signUpFallbackRedirectUrl="/connected-sites?flow=started"
