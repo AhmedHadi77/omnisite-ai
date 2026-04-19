@@ -24,6 +24,8 @@ const modules = [
   { title: "Ship the work", text: "Turn recommendations into tasks, approvals, and clear agency handoff.", icon: ClipboardList }
 ];
 
+const workspaceHref = "/connected-sites?flow=started";
+
 export function HomePageClient() {
   return (
     <main className="min-h-screen bg-[#f3f7f2] text-ink">
@@ -49,7 +51,7 @@ export function HomePageClient() {
               <a className="hover:text-citron" href="/case-study">Case Study</a>
               <a className="hover:text-citron" href="/demo">Demo</a>
             </div>
-            <MotionLink className="btn-accent" href="/sign-in">Open app</MotionLink>
+            <MotionLink className="btn-accent" href={workspaceHref}>Open app</MotionLink>
           </motion.nav>
 
           <div className="grid flex-1 items-center gap-10 py-14 xl:grid-cols-[1.04fr_0.96fr]">
@@ -84,8 +86,8 @@ export function HomePageClient() {
                 initial={{ opacity: 0, y: 18 }}
                 transition={{ delay: 0.46, duration: 0.55 }}
               >
-                <MotionLink className="btn-accent min-w-44" href="/sign-in">
-                  Launch dashboard
+                <MotionLink className="btn-accent min-w-44" href={workspaceHref}>
+                  Launch workspace
                   <ArrowUpRight className="h-4 w-4" />
                 </MotionLink>
                 <MotionLink className="btn-secondary border-cloud/20 bg-cloud/12 text-cloud hover:bg-cloud/20" href="/case-study">
@@ -195,7 +197,7 @@ export function HomePageClient() {
               <p className="text-sm font-black uppercase text-citron">Clear demo story</p>
               <h2 className="mt-2 text-4xl font-black">Sign in, add a site, test APIs, run AI audit, generate tasks.</h2>
             </div>
-            <MotionLink className="btn-accent" href="/sign-in">
+            <MotionLink className="btn-accent" href={workspaceHref}>
               Try the flow
               <Zap className="h-4 w-4" />
             </MotionLink>

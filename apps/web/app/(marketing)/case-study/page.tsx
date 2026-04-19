@@ -93,7 +93,7 @@ export default function CaseStudyPage() {
               <a className="hover:text-citron" href="#architecture">Architecture</a>
               <a className="hover:text-citron" href="#screens">Screens</a>
             </div>
-            <a className="btn-accent" href="/sign-in">Open app</a>
+            <a className="btn-accent" href="/connected-sites?flow=started">Open app</a>
           </nav>
 
           <div className="grid flex-1 items-center gap-10 py-14 xl:grid-cols-[1fr_430px]">
@@ -108,12 +108,12 @@ export default function CaseStudyPage() {
                 OmniSite AI unifies Webflow, WordPress, and Shopify operations into one workspace where audits become tasks and client requests stay visible.
               </p>
               <div className="motion-card mt-8 flex flex-wrap gap-3">
-                <a className="btn-accent" href="/sign-in">
+                <a className="btn-accent" href="/connected-sites?flow=started">
                   Walk the demo
                   <ArrowUpRight className="h-4 w-4" />
                 </a>
-                <a className="btn-secondary border-cloud/20 bg-cloud/12 text-cloud hover:bg-cloud/20" href="/dashboard">
-                  View dashboard
+                <a className="btn-secondary border-cloud/20 bg-cloud/12 text-cloud hover:bg-cloud/20" href="/connected-sites?flow=started">
+                  View workspace
                 </a>
               </div>
             </div>
@@ -278,7 +278,7 @@ export default function CaseStudyPage() {
               <p className="text-sm font-black uppercase">Demo recording path</p>
               <h2 className="mt-2 text-4xl font-black">Sign in, add site, test credentials, run audit, generate tasks, review client request.</h2>
             </div>
-            <a className="btn-primary" href="/sign-in">
+            <a className="btn-primary" href="/connected-sites?flow=started">
               Record walkthrough
               <ArrowUpRight className="h-4 w-4" />
             </a>
